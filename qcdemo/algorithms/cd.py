@@ -54,8 +54,8 @@ def index(request):
         # create graph, qubo, bqm
         try:
             G = create_graph(resp['graph_type'], resp['vertices'], resp['structure'], weight=True, directed=False)
-            Q = create_qubo_cd(G, resp['communities'])
-            bqm = create_bqm_cd(Q, G, resp['communities'])
+            Q, offset = create_qubo_cd(G, resp['communities'])
+            bqm = create_bqm_cd(Q, offset, G, resp['communities'])
             result = basic_stats(G,Q, bqm)
         except Exception as err:
             resp['error'] = 'error in graph structure'
@@ -88,12 +88,12 @@ def index(request):
         resp['communities'] = 4
     return render(request, 'algorithm.html', resp) 
 
-def create_bqm_cd(Q, G, communities):
+def create_bqm_cd(Q, offset, G, communities):
     labels = {}
     for i in range(len(G.nodes)):
         for j in range(communities):
             labels[i*communities + j]=(i,j)
-    return BinaryQuadraticModel(Q, 'BINARY').relabel_variables(labels, inplace=False)
+    return BinaryQuadraticModel.from_qubo(Q, offset = offset).relabel_variables(labels, inplace=False)
 
 def result_to_colors(G, sample):
     cs = np.zeros(len(G.nodes))
@@ -108,34 +108,36 @@ def result_to_colors(G, sample):
 def create_qubo_cd(G, communities):
     vertices = len(G.nodes)
     Q = np.zeros((vertices*communities, vertices*communities))
-    p = 0
+    offset = 0
+    
+    w = 0
     for e in G.edges:
-        p += G[e[0]][e[1]]['weight']
+        w += G[e[0]][e[1]]['weight']
 
-    # Helper datastructure to contain k
     k = np.zeros(vertices)
     for e in G.edges:
         k[e[0]] += G[e[0]][e[1]]['weight']
         k[e[1]] += G[e[0]][e[1]]['weight']
 
-    # Constraint 1
+    # Vertex must belong to exactly one community
     for v in range(vertices): 
         for c1 in range(communities):
-            Q[v*communities+c1,v*communities+c1] -= p
+            Q[v*communities+c1,v*communities+c1] -= communities
             for c2 in range(c1+1, communities):
-                Q[v*communities+c1,v*communities+c2] += 2*p
-                
-    # Constraint 2
+                Q[v*communities+c1,v*communities+c2] += communities * 2
+    offset += communities * vertices
+    
+    # Minimise modularity
     for c in range(communities):
         for v1 in range(vertices): 
             for v2 in range(v1+1,vertices): 
-                Q[v1*communities+c, v2*communities+c] += k[v1]*k[v2] / (2*p)
-                
+                Q[v1*communities+c, v2*communities+c] += k[v1] * k[v2] / (2 * w)
     for e in G.edges:
         for c in range(communities):
             Q[e[0]*communities+c, e[1]*communities+c] -= G[e[0]][e[1]]['weight']
+    offset += 2 * w
             
-    return Q
+    return Q, offset
 
 def check_result_cd(G, sampleset, communities):
     c1 = nx.community.greedy_modularity_communities(G, weight='weight', best_n=communities)

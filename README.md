@@ -1,4 +1,4 @@
-# AQC demo
+# Graphs on Qubits
 
 This demo run some graph algorithms with quantum annealer (D-Wave). 
 
