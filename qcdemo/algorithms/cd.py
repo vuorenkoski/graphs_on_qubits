@@ -18,7 +18,7 @@ solvers = ['local simulator', 'cloud hybrid solver', 'Advantage_system4.1', 'Adv
 def index(request):
     resp = {}
     resp['algorithm'] = 'Community detection'
-    resp['correctness'] = 'Community graphs have three artificial communities. The accuracy is measured by the difference of modularity value of the'\
+    resp['correctness'] = 'Community graphs have three artificial communities. The accuracy is measured by the difference of modularity value of the '\
          'outcome and the modularity value given of outcome of NetworkX function greedy_modularity_communities. More negative the value is, more poorer the modularity of the algorithms outcome was.'
     resp['algorithms'] = algorithms
     resp['solvers'] = solvers
@@ -55,7 +55,7 @@ def index(request):
         try:
             G = create_graph(resp['graph_type'], resp['vertices'], resp['structure'], weight=True, directed=False)
             Q = create_qubo_cd(G, resp['communities'])
-            bqm = create_bqm_gi(Q, G, resp['communities'])
+            bqm = create_bqm_cd(Q, G, resp['communities'])
             result = basic_stats(G,Q, bqm)
         except Exception as err:
             resp['error'] = 'error in graph structure'
@@ -88,7 +88,7 @@ def index(request):
         resp['communities'] = 4
     return render(request, 'algorithm.html', resp) 
 
-def create_bqm_gi(Q, G, communities):
+def create_bqm_cd(Q, G, communities):
     labels = {}
     for i in range(len(G.nodes)):
         for j in range(communities):
@@ -112,7 +112,7 @@ def create_qubo_cd(G, communities):
     for e in G.edges:
         p += G[e[0]][e[1]]['weight']
 
-    # Helper datastructure to containt k
+    # Helper datastructure to contain k
     k = np.zeros(vertices)
     for e in G.edges:
         k[e[0]] += G[e[0]][e[1]]['weight']

@@ -46,7 +46,7 @@ def hdata_to_json(sampleset):
         datap.append({'energy':int(i),'num_occurrences':int(n)})
     return JsonResponse(datap, safe=False).content.decode('utf-8')
 
-def basic_stats(G,Q, bqm):
+def basic_stats(G, Q, bqm):
     result = {}
     result['edges'] = len(G.edges)
     result['vertices'] = len(G.nodes)
@@ -56,7 +56,7 @@ def basic_stats(G,Q, bqm):
 
     # No negative weights
     for e in G.edges(data=True):
-        if e[2]['weight']<0:
+        if e[2]!={} and e[2]['weight']<0:
             raise Exception()
 
     # There must be atleast one edge and two vertices
@@ -70,7 +70,7 @@ def basic_stats(G,Q, bqm):
 
     return result
 
-def solve(bqm,resp):
+def solve(bqm, resp):
     result = {}
 
     if resp['solver'] =='local simulator':

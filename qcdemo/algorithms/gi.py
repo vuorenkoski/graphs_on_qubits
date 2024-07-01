@@ -45,10 +45,10 @@ def index(request):
         # create graph, qubo, bqm
         try:
             G1, G2 = create_graph(resp['graph_type'], resp['vertices'], resp['structure'], weight=False, directed=False, permutation=True)
-            Q = create_qubo_gi(G1,G2)
-            bqm = create_bqm_gi(Q, G1)
-            result = basic_stats(G1,Q, bqm)
-            result['exp_energy'] = -len(G1.edges)
+            Q, offset = create_qubo_gi(G1,G2)
+            bqm = create_bqm_gi(Q, offset, G1)
+            result = basic_stats(G1, Q, bqm)
+            result['exp_energy'] = 0
         except Exception as err:
             resp['error'] = 'error in graph structure'
             return render(request, 'algorithm.html', resp) 
@@ -63,8 +63,8 @@ def index(request):
         
         # Gather rest of results    
         resp['qdata'] = {'data': Q_to_json(Q.tolist()), 'size':len(Q)}
-        result['energy'] = int(sampleset.first.energy)
-        result['success'] = str(result['energy'] - result['exp_energy'])
+        result['energy'] = str(int(sampleset.first.energy))
+        result['success'] = str(int(sampleset.first.energy) - result['exp_energy'])
         result['result'] = check_result_gi(sampleset, result['exp_energy'])
         resp['result'] = result
 
@@ -81,13 +81,13 @@ def index(request):
         resp['graph_type'] = 'wheel graph'
     return render(request, 'algorithm.html', resp) 
 
-def create_bqm_gi(Q, G):
+def create_bqm_gi(Q, offset, G):
     labels = {}
     vertices = len(G.nodes)
     for i in range(vertices):
         for j in range(vertices):
             labels[i*vertices+j] = (i,j)
-    return BinaryQuadraticModel(Q, 'BINARY').relabel_variables(labels, inplace=False)
+    return BinaryQuadraticModel.from_qubo(Q, offset = offset).relabel_variables(labels, inplace=False)
 
 def create_qubo_gi(G1, G2):
     vertices = len(G1.nodes)
@@ -97,34 +97,31 @@ def create_qubo_gi(G1, G2):
     E2 = [] 
     for e in G2.edges(data=True):
         E2.append((e[0],e[1]))
-    p = len(E1)
     Q = np.zeros((vertices*vertices, vertices*vertices))
+    offset = 0
     
-    # Constraint 1: penalty if several mappings from same source
-    for i in range(vertices): 
+    # Bijectivity
+    for i in range(vertices):
         for j in range(vertices): 
+            Q[i*vertices+j,i*vertices+j] -= vertices 
             for k in range(j+1,vertices): 
-                Q[i*vertices+j,i*vertices+k]=p 
-
-    # Constaint 2: penalty if several mappings to same target
-    for i in range(vertices): 
-        for j in range(vertices): 
-            for k in range(j+1,vertices): 
-                Q[i+vertices*j,i+vertices*k]=p 
-                
-    # Constraint 3: -1 for each succesfully mapped edge: (x1,y1) -> (x2,y2) 
-    #    two possible mappings: (x1->x2, y1->y2) or (x1->y2,y1->x2)
+                Q[i*vertices+j,i*vertices+k] += vertices * 2 
+                Q[i+j*vertices,i+k*vertices] += vertices * 2 
+    offset += vertices*vertices
+        
+    # Mapping respect edges 
     for e1 in E1: 
         for e2 in E2: 
             Q[e1[0]*vertices+e2[0], e1[1]*vertices+e2[1]] -= 1
             Q[e1[0]*vertices+e2[1], e1[1]*vertices+e2[0]] -= 1
-            
     # All quadratic coefficients in lower triangle to upper triangle
     for i in range(vertices*vertices): 
         for j in range(i):
             Q[j,i] += Q[i,j]
             Q[i,j] = 0
-    return Q
+    offset += len(E1)
+    print(offset)
+    return Q, offset
 
 def check_result_gi(sampleset, e):
     if int(sampleset.first.energy)==e:
