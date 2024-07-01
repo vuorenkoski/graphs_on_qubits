@@ -120,7 +120,6 @@ def create_qubo_gi(G1, G2):
             Q[j,i] += Q[i,j]
             Q[i,j] = 0
     offset += len(E1)
-    print(offset)
     return Q, offset
 
 def check_result_gi(sampleset, e):

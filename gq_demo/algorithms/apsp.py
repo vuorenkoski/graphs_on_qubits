@@ -93,40 +93,44 @@ def create_qubo_apsp(G):
     Q = np.zeros((2*vertices + edges, 2*vertices + edges))
     offset = 0
 
-    # Constraints 1 and 2
+    # Uniqueness of starting nodes
     for i in range(vertices):
         for j in range(i+1, vertices):
             Q[i,j] += p
-            Q[vertices+i,vertices+j] += p
-        
-    # Constraint 3
-    for i in range(vertices):
-        Q[i,i+vertices] += p
 
-    # Constraint 4
+    # At least one starting vertex
     for i in range(edges):
         Q[E[i][0],vertices*2+i] -= p
         Q[E[i][1],vertices*2+i] += p
- 
-    # Constraint 5
+
+    # Uniqueness of target nodes
+    for i in range(vertices):
+        for j in range(i+1, vertices):
+            Q[vertices+i,vertices+j] += p
+
+    # At least one target vertex
     for i in range(edges):
         Q[vertices+E[i][1],vertices*2+i] -= p
         Q[vertices+E[i][0],vertices*2+i] += p
 
-    # Constraint 6
+    # Different starting and target nodes
+    for i in range(vertices):
+        Q[i,i+vertices] += p
+
+    # Two edges should not start or terminate from same node
     for i in range(edges):
         for j in range(i+1,edges):
             if E[i][0]==E[j][0] or E[i][1]==E[j][1]:
                 Q[vertices*2+i,vertices*2+j] += p
 
-    # Constraint 7
+    # Every path has to be connected
     for i in range(edges):
         Q[vertices*2+i,vertices*2+i] +=p
         for j in range(i+1,edges):
             if E[i][1]==E[j][0] or E[i][0]==E[j][1]:
                 Q[vertices*2+i,vertices*2+j] -= p
 
-    # Constraint 8 
+    # Cost constraint 
     for i in range(edges):
         Q[vertices*2+i,vertices*2+i] += E[i][2]
 
