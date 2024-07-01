@@ -5,8 +5,8 @@ from networkx.classes.function import path_weight
 from networkx import has_path, all_shortest_paths
 import numpy as np
 
-from qcdemo.graphs import create_graph
-from qcdemo.utils import basic_stats, solve, graph_to_json, Q_to_json, colors, algorithms, graph_types
+from gq_demo.graphs import create_graph
+from gq_demo.utils import basic_stats, solve, graph_to_json, Q_to_json, colors, algorithms, graph_types
 
 min_vertices = 5
 max_vertices = 20
@@ -44,8 +44,8 @@ def index(request):
         # create graph, qubo, bqm
         try:
             G = create_graph(resp['graph_type'], resp['vertices'], resp['structure'], weight=True, directed=True)
-            Q = create_qubo_apsp(G)
-            bqm = create_bqm_apsp(Q, G)
+            Q, offset = create_qubo_apsp(G)
+            bqm = create_bqm_apsp(Q, offset, G)
             result = basic_stats(G,Q, bqm)
         except Exception as err:
             resp['error'] = 'error in graph structure'
@@ -91,6 +91,7 @@ def create_qubo_apsp(G):
 
     edges = len(E)
     Q = np.zeros((2*vertices + edges, 2*vertices + edges))
+    offset = 0
 
     # Constraints 1 and 2
     for i in range(vertices):
@@ -129,9 +130,9 @@ def create_qubo_apsp(G):
     for i in range(edges):
         Q[vertices*2+i,vertices*2+i] += E[i][2]
 
-    return Q
+    return Q, offset
 
-def create_bqm_apsp(Q, G):
+def create_bqm_apsp(Q, offset, G):
     labels = {}
     vertices = len(G.nodes)
     for i in range(vertices):
@@ -139,7 +140,7 @@ def create_bqm_apsp(Q, G):
         labels[vertices+i]='t'+str(i)   
     for i,e in enumerate(G.edges):
         labels[vertices*2+i] = str(e[0]) + '-' + str(e[1])
-    return BinaryQuadraticModel(Q, 'BINARY').relabel_variables(labels, inplace=False)
+    return BinaryQuadraticModel.from_qubo(Q, offset = offset).relabel_variables(labels, inplace=False)
 
 def xy_from_label(e):
     x = 0

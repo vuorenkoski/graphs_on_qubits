@@ -3,8 +3,8 @@ from django.shortcuts import render
 from dimod import BinaryQuadraticModel
 import numpy as np
 
-from qcdemo.graphs import create_graph
-from qcdemo.utils import basic_stats, solve, graph_to_json, graph_to_json, Q_to_json, colors, algorithms, graph_types
+from gq_demo.graphs import create_graph
+from gq_demo.utils import basic_stats, solve, graph_to_json, graph_to_json, Q_to_json, colors, algorithms, graph_types
 
 min_vertices = 5
 max_vertices = 20

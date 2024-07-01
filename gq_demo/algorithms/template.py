@@ -3,8 +3,8 @@ from django.shortcuts import render
 from dimod import BinaryQuadraticModel
 import numpy as np
 
-from qcdemo.graphs import create_graph
-from qcdemo.utils import basic_stats, solve, graph_to_json, Q_to_json, colors, algorithms, graph_types
+from gq_demo.graphs import create_graph
+from gq_demo.utils import basic_stats, solve, graph_to_json, Q_to_json, colors, algorithms, graph_types
 
 # Parameters for UI constraints 
 min_vertices = 5
@@ -41,8 +41,8 @@ def index(request):
 
         # create graph, qubo, bqm
         G = create_graph(resp['graph_type'],resp['vertices'], weight=True, directed=True) # ARE WEIGHT AND DIRECTNESS NEEDED?
-        Q = create_qubo(G)
-        bqm = create_bqm(Q, G)
+        Q, offset = create_qubo(G)
+        bqm = create_bqm(Q, offset, G)
         result = basic_stats(G,Q, bqm)
 
         # Solve
@@ -70,14 +70,11 @@ def index(request):
         resp['graph_type'] = 'wheel graph'
     return render(request, 'algorithm.html', resp) 
 
-
 def create_qubo(G):
     return None
 
-
-def create_bqm(Q, G):
-    return BinaryQuadraticModel(Q, 'BINARY') # MORE HERE IF LABELS ARE NEEDED
-
+def create_bqm(Q, offset, G):
+    return BinaryQuadraticModel.from_qubo(Q, offset = offset) # MORE HERE IF LABELS ARE NEEDED
 
 def check_result(G,sampleset):
     return None
