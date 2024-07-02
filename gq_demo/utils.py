@@ -86,7 +86,7 @@ def solve(bqm, resp):
         qsolver = resp['solver']
         machine = DWaveSampler(token=resp['token'], solver=qsolver)
         result['chipset'] = machine.properties['chip_id']
-        sampleset = EmbeddingComposite(machine).sample(bqm, num_reads=resp['num_reads']).aggregate()
+        sampleset = EmbeddingComposite(machine).sample(bqm, num_reads=resp['num_reads'], return_embedding=True).aggregate()
         result['time'] = int(sampleset.info['timing']['qpu_access_time'] / 1000)
         result['physical_qubits'] = sum(len(x) for x in sampleset.info['embedding_context']['embedding'].values())
         result['chainb'] = str(sampleset.first.chain_break_fraction)
