@@ -92,5 +92,5 @@ def solve(bqm, resp):
         result['chainb'] = str(sampleset.first.chain_break_fraction)
         resp['hdata'] = hdata_to_json(sampleset)
 
-    result['energy'] = int(sampleset.first.energy)
+    result['energy'] = str(round(sampleset.first.energy,3))
     return result, sampleset

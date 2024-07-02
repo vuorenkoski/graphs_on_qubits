@@ -63,8 +63,7 @@ def index(request):
         
         # Gather rest of results    
         resp['qdata'] = {'data': Q_to_json(Q.tolist()), 'size':len(Q)}
-        result['energy'] = str(int(sampleset.first.energy))
-        result['success'] = str(int(sampleset.first.energy) - result['exp_energy'])
+        result['success'] = str(round(sampleset.first.energy - result['exp_energy'],3))
         result['result'] = check_result_gi(sampleset, result['exp_energy'])
         resp['result'] = result
 

@@ -9,7 +9,7 @@ from gq_demo.graphs import create_graph
 from gq_demo.utils import basic_stats, solve, graph_to_json, Q_to_json, colors, algorithms, graph_types
 
 min_vertices = 5
-max_vertices = 20
+max_vertices = 60
 min_communities = 1
 max_communities = 10
 max_num_reads = 10000
@@ -19,7 +19,7 @@ def index(request):
     resp = {}
     resp['algorithm'] = 'Community detection'
     resp['correctness'] = 'Community graphs have three artificial communities. The accuracy is measured by the difference of modularity value of the '\
-         'outcome and the modularity value given of outcome of NetworkX function greedy_modularity_communities. More negative the value is, more poorer the modularity of the algorithms outcome was.'
+         'outcome and the modularity value given of outcome of NetworkX function greedy_modularity_communities. More positive the value is, more poorer the modularity of the algorithms outcome was.'
     resp['algorithms'] = algorithms
     resp['solvers'] = solvers
     resp['graph_types'] = graph_types
@@ -71,8 +71,9 @@ def index(request):
 
         # Gather rest of results
         resp['qdata'] = {'data': Q_to_json(Q.tolist()), 'size':len(Q)}
-        result['energy'] = int(sampleset.first.energy)
         result['success'] = check_result_cd(G,sampleset,resp['communities'])
+        if sampleset.first.energy>1:
+            result['result'] = 'community error'
         resp['result'] = result
 
         # Create graph-data
@@ -135,21 +136,24 @@ def create_qubo_cd(G, communities):
     for e in G.edges:
         for c in range(communities):
             Q[e[0]*communities+c, e[1]*communities+c] -= G[e[0]][e[1]]['weight']
-    offset += 2 * w
-            
+            Q[e[0]*communities+c, e[1]*communities+c] /= 2 * w
+    offset += 1
     return Q, offset
 
 def check_result_cd(G, sampleset, communities):
     c1 = nx.community.greedy_modularity_communities(G, weight='weight', best_n=communities)
     res1 = nx.community.modularity(G,c1)
-    c2 = [[] for i in range(communities)]
+    x = 0
+    for k,v in sampleset.first.sample.items():
+        if v==1 and k[1]>=x:
+            x=k[1]+1 
+    c2 = [[] for i in range(x)]
     for k,v in sampleset.first.sample.items():
         if v==1: 
             c2[k[1]].append(k[0])
     c2 = [frozenset(x) for x in c2]
-
     if nx.community.is_partition(G,c2):
         res2 = nx.community.modularity(G,c2)
-        return str(round(res2-res1,3))
+        return str(round(res1-res2,3))
     else:
         return 'np'
