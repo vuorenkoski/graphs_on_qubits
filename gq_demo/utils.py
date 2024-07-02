@@ -2,7 +2,6 @@ from django.http import JsonResponse
 import time
 from dwave.system import DWaveSampler, EmbeddingComposite, LeapHybridSampler
 from dwave.samplers import SimulatedAnnealingSampler
-import dwave.inspector
 
 algorithms = [{'name':'All pairs shortest path', 'short':'apsp'}, 
               {'name':'Graph isomorphism', 'short':'gi'},

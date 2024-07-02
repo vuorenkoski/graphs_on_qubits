@@ -95,8 +95,10 @@ def create_qubo_apsp(G):
 
     # Uniqueness of starting nodes
     for i in range(vertices):
+        Q[i,i] -= p
         for j in range(i+1, vertices):
-            Q[i,j] += p
+            Q[i,j] += p * 2
+    offset += p
 
     # At least one starting vertex
     for i in range(edges):
@@ -105,8 +107,10 @@ def create_qubo_apsp(G):
 
     # Uniqueness of target nodes
     for i in range(vertices):
+        Q[vertices+i,vertices+i] -= p
         for j in range(i+1, vertices):
-            Q[vertices+i,vertices+j] += p
+            Q[vertices+i,vertices+j] += p * 2
+    offset += p
 
     # At least one target vertex
     for i in range(edges):
