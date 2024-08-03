@@ -42,7 +42,13 @@ def create_graph(name, vertices, structure, weight=False, directed=True, permuta
         else:
             return G
     elif name=='community graph':
-        return graph_community(vertices,3)
+        G = graph_community(vertices,3)
+        if permutation:
+            mapping = dict(zip(G.nodes(), sorted(G.nodes(), key=lambda k: random.random())))
+            GP = nx.relabel_nodes(G, mapping)
+            return (G, GP)
+        else:
+            return G
     elif name=='manual graph':
         lines = structure.split(',')
         create_using = nx.DiGraph() if directed else nx.Graph()
