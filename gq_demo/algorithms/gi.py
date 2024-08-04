@@ -48,7 +48,8 @@ def index(request):
             Q, offset = create_qubo_gi(G1,G2)
             bqm = create_bqm_gi(Q, offset, G1)
             result = basic_stats(G1, Q, bqm)
-            result['exp_energy'] = 0
+            exp_energy = 0
+            result['exp_energy'] = str(exp_energy)
         except Exception as err:
             resp['error'] = 'error in graph structure'
             return render(request, 'algorithm.html', resp) 
@@ -63,8 +64,9 @@ def index(request):
         
         # Gather rest of results    
         resp['qdata'] = {'data': Q_to_json(Q.tolist()), 'size':len(Q)}
-        result['success'] = str(round(sampleset.first.energy - result['exp_energy'],3))
-        result['result'] = check_result_gi(sampleset, result['exp_energy'])
+        result['energy'] = str(sampleset.first.energy)
+        result['success'] = str(round(sampleset.first.energy - exp_energy,3))
+        result['result'] = check_result_gi(sampleset, exp_energy, result['vertices'])
         resp['result'] = result
 
         # Create graph-data
@@ -100,29 +102,53 @@ def create_qubo_gi(G1, G2):
     offset = 0
     
     # Bijectivity
+    p = vertices 
     for i in range(vertices):
         for j in range(vertices): 
-            Q[i*vertices+j,i*vertices+j] -= vertices 
+            Q[i*vertices+j,i*vertices+j] -= 2 * p 
             for k in range(j+1,vertices): 
-                Q[i*vertices+j,i*vertices+k] += vertices * 2 
-                Q[i+j*vertices,i+k*vertices] += vertices * 2 
-    offset += vertices*vertices
-        
-    # Mapping respect edges 
+                Q[i*vertices+j,i*vertices+k] += 2 * p 
+                Q[i+j*vertices,i+k*vertices] += 2 * p
+    offset += 2 * vertices * p
+
+    # Mapping respects edges 
     for e1 in E1: 
         for e2 in E2: 
             Q[e1[0]*vertices+e2[0], e1[1]*vertices+e2[1]] -= 1
             Q[e1[0]*vertices+e2[1], e1[1]*vertices+e2[0]] -= 1
+
     # All quadratic coefficients in lower triangle to upper triangle
     for i in range(vertices*vertices): 
         for j in range(i):
             Q[j,i] += Q[i,j]
             Q[i,j] = 0
     offset += len(E1)
+
     return Q, offset
 
-def check_result_gi(sampleset, e):
+def check_result_gi(sampleset, e, v):
+    sample = sampleset.first.sample
+    n = 0
+    mapping = {}
+    for x in sample.keys():
+        if sample[x]==1:
+            mapping[x] = 1
+            n += 1
+
+    if n!=v:
+        return 'bijection error'
+    vi=0
+    vj=0
+    for i in range(v):
+        for j in range(v):
+            if (i,j) in mapping.keys():
+                vi += 1
+                vj += 1
+    if vi!=v or vj!=v:
+        return 'bijection error'
+    
     if int(sampleset.first.energy)==e:
         return 'isomorphic'
     else:
         return 'non-isomorphic'
+    
