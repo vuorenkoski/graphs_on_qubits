@@ -101,21 +101,28 @@ def create_qubo_gi(G1, G2):
     Q = np.zeros((vertices*vertices, vertices*vertices))
     offset = 0
     
-    # Bijectivity
     p = vertices 
-    for i in range(vertices):
-        for j in range(vertices): 
-            Q[i*vertices+j,i*vertices+j] -= 2 * p 
-            for k in range(j+1,vertices): 
-                Q[i*vertices+j,i*vertices+k] += 2 * p 
-                Q[i+j*vertices,i+k*vertices] += 2 * p
-    offset += 2 * vertices * p
+    # Bijectivity 1
+    for v1 in range(vertices):
+        for v2 in range(vertices): 
+            Q[v1*vertices+v2,v1*vertices+v2] -= p 
+            for k in range(1,vertices-v2): 
+                Q[v1*vertices+v2,v1*vertices+v2+k] += 2 * p 
+    offset += vertices * p
+
+    # Bijectivity 2
+    for v2 in range(vertices):
+        for v1 in range(vertices): 
+            Q[v2*vertices+v1,v2*vertices+v1] -= p 
+            for k in range(1,vertices-v1): 
+                Q[v1*vertices+v2,(v1+k)*vertices+v2] += 2 * p
+    offset += vertices * p
 
     # Mapping respects edges 
-    for e1 in E1: 
-        for e2 in E2: 
-            Q[e1[0]*vertices+e2[0], e1[1]*vertices+e2[1]] -= 1
-            Q[e1[0]*vertices+e2[1], e1[1]*vertices+e2[0]] -= 1
+    for (v1,v2) in E1: 
+        for (w1,w2) in E2: 
+            Q[v1*vertices+w1, v2*vertices+w2] -= 1
+            Q[v1*vertices+w2, v2*vertices+w1] -= 1
 
     # All quadratic coefficients in lower triangle to upper triangle
     for i in range(vertices*vertices): 
