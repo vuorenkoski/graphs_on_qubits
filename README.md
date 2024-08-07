@@ -16,13 +16,13 @@ python manage.py runserver
 ### Build
 
 ```
-sudo docker build -t gq_demo:v0.8 .
+sudo docker build -t gq_demo:v0.9 .
 ```
 
 ### Run
 
 ```
-sudo docker run -p 8000:8000 gq_demo:v0.8
+sudo docker run -p 8000:8000 gq_demo:v0.9
 ```
 
 After this command application can be accesses from address http://127.0.0.1:8000/
@@ -32,8 +32,8 @@ After this command application can be accesses from address http://127.0.0.1:800
 https://hub.docker.com/r/vuorenkoski/gq_demo
 
 ```
-sudo docker pull vuorenkoski/gq_demo:v0.8
-sudo docker run -p 8000:8000 vuorenkoski/gq_demo:v0.8
+sudo docker pull vuorenkoski/gq_demo:v0.9
+sudo docker run -p 8000:8000 vuorenkoski/gq_demo:v0.9
 ```
 
 ![screenshot](screenshot.png)
