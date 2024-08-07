@@ -26,23 +26,22 @@ def Q_to_json(G):
 
 def hdata_to_json(sampleset):
     data = {}
-    maxv = int(sampleset.first.energy)
-    minv = int(sampleset.first.energy)
+    maxv = round(sampleset.first.energy, 3)
+    minv = maxv
     for e,n in sampleset.data(fields=['energy','num_occurrences']):
-        energy = int(e)
+        energy = round(e,3)
         minv = min(energy,minv)
         maxv = max(energy,maxv)
         if energy in data.keys():
             data[energy] += n
         else:
             data[energy] = n
+    print(minv,maxv)
+    print(data)
     datap = []
-    for i in range(minv,maxv):
-        if i in data.keys():
-            n = data[i]
-        else:
-            n = 0
-        datap.append({'energy':int(i),'num_occurrences':int(n)})
+    for i in data.keys():
+        n = data[i]
+        datap.append({'energy':i,'num_occurrences':int(data[i])})
     return JsonResponse(datap, safe=False).content.decode('utf-8')
 
 def basic_stats(G, Q, bqm):

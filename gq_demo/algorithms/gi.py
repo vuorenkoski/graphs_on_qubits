@@ -48,7 +48,7 @@ def index(request):
             Q, offset = create_qubo_gi(G1,G2)
             bqm = create_bqm_gi(Q, offset, G1)
             result = basic_stats(G1, Q, bqm)
-            exp_energy = 0
+            exp_energy = -result['edges']
             result['exp_energy'] = str(exp_energy)
         except Exception as err:
             resp['error'] = 'error in graph structure'
@@ -129,7 +129,6 @@ def create_qubo_gi(G1, G2):
         for j in range(i):
             Q[j,i] += Q[i,j]
             Q[i,j] = 0
-    offset += len(E1)
 
     return Q, offset
 

@@ -19,7 +19,8 @@ def index(request):
     resp = {}
     resp['algorithm'] = 'Community detection'
     resp['correctness'] = 'Community graphs have three artificial communities. The accuracy is measured by the difference of modularity value of the '\
-         'outcome and the modularity value given of outcome of NetworkX function greedy_modularity_communities. More positive the value is, more poorer the modularity of the algorithms outcome was.'
+         'outcome (lowest energy level produced) and the modularity value of outcome of calssical NetworkX function greedy_modularity_communities.'\
+         ' More positive this value is, more poorer the modularity of the algorithms outcome was.'
     resp['algorithms'] = algorithms
     resp['solvers'] = solvers
     resp['graph_types'] = graph_types
@@ -52,14 +53,14 @@ def index(request):
             return render(request, 'cd/index.html', resp) 
 
         # create graph, qubo, bqm
-#        try:
-        G = create_graph(resp['graph_type'], resp['vertices'], resp['structure'], weight=True, directed=False)
-        Q, offset = create_qubo_cd(G, resp['communities'])
-        bqm = create_bqm_cd(Q, offset, G, resp['communities'])
-        result = basic_stats(G,Q, bqm)
-#        except Exception as err:
-#            resp['error'] = 'error in graph structure'
-#            return render(request, 'algorithm.html', resp) 
+        try:
+            G = create_graph(resp['graph_type'], resp['vertices'], resp['structure'], weight=True, directed=False)
+            Q, offset = create_qubo_cd(G, resp['communities'])
+            bqm = create_bqm_cd(Q, offset, G, resp['communities'])
+            result = basic_stats(G,Q, bqm)
+        except Exception as err:
+            resp['error'] = 'error in graph structure'
+            return render(request, 'algorithm.html', resp) 
 
         # Solve
         try:
@@ -72,8 +73,6 @@ def index(request):
         # Gather rest of results
         resp['qdata'] = {'data': Q_to_json(Q.tolist()), 'size':len(Q)}
         result['success'] = check_result_cd(G,sampleset,resp['communities'])
-        if sampleset.first.energy>1:
-            result['result'] = 'community error'
         resp['result'] = result
 
         # Create graph-data
@@ -143,4 +142,4 @@ def create_qubo_cd(G, communities):
 
 def check_result_cd(G, sampleset, communities):
     c1 = nx.community.greedy_modularity_communities(G, weight='weight', best_n=communities)
-    return str(round(nx.community.modularity(G,c1) + sampleset.first.energy,3))
+    return str(abs(round(nx.community.modularity(G,c1) + sampleset.first.energy,3)))
